@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Send, Heart, MessageSquare, AlertTriangle, Camera, Settings, LogOut, Sun, Moon, Home, Bell, User, BarChart2, Bot, Menu, Search, Calendar, X, Filter } from 'lucide-react';
+import { ChevronRight, Send, Heart, MessageSquare, AlertTriangle, Camera, Settings, LogOut, Sun, Moon, Home, Bell, User, BarChart2, Bot, Menu, Search, Calendar, X, Filter, Mail, Phone, Linkedin, Github, Briefcase, Award } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, BarChart, Bar, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -166,6 +166,11 @@ const AIAssistantApp = () => {
         setActiveTab('ai-assistant');
     };
 
+
+    const handleLogoClick = () => {
+        setActiveTab('home');
+    };
+
     const getFeatureColor = () => {
         return selectedFeature ? selectedFeature.color : 'bg-blue-600';
     };
@@ -301,7 +306,7 @@ const AIAssistantApp = () => {
                     <button onClick={toggleSidebar} className="mr-4">
                         <Menu size={24} />
                     </button>
-                    <h1 className="text-2xl font-bold">AI-Assistant-Bodhi</h1>
+                    <h1 className="text-2xl font-bold" onClick={handleLogoClick}>AI-Assistant-Bodhi</h1>
                 </div>
                 <div className="flex items-center space-x-4">
                     <button onClick={toggleTheme} className={`${isDarkMode ? 'text-yellow-300' : 'text-gray-600'} hover:text-yellow-500`}>
@@ -678,7 +683,7 @@ const AIAssistantApp = () => {
                         >
                             <div className="relative">
                                 <img
-                                    src="/api/placeholder/100/100"
+                                    src="https://imgcdn.stablediffusionweb.com/2024/4/12/3b464fee-5501-43b7-8ada-d3d25acf94d7.jpg"
                                     alt="Profile"
                                     className="w-24 h-24 rounded-full object-cover"
                                 />
@@ -689,8 +694,8 @@ const AIAssistantApp = () => {
                                 </button>
                             </div>
                             <div className="ml-4">
-                                <h2 className="text-2xl font-bold">John Doe</h2>
-                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>john.doe@example.com</p>
+                                <h2 className="text-2xl font-bold">Virtual User</h2>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>virtual.user@example.com</p>
                             </div>
                         </motion.div>
 
@@ -705,42 +710,56 @@ const AIAssistantApp = () => {
                                 className={`text-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg hover:scale-105 transition-transform duration-300`}
                             >
                                 <p className="font-bold text-xl">64</p>
-                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Activity</p>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Chat Assistant</p>
                             </motion.div>
                             <motion.div
                                 className={`text-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg hover:scale-105 transition-transform duration-300`}
                             >
                                 <p className="font-bold text-xl">842</p>
-                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Interactions</p>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Code Review</p>
                             </motion.div>
                             <motion.div
                                 className={`text-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg hover:scale-105 transition-transform duration-300`}
                             >
                                 <p className="font-bold text-xl">620</p>
-                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Connections</p>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Story Writing</p>
                             </motion.div>
-                        </motion.div>
-
-                        {/* Design Images */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.4 }}
-                        >
-                            <h3 className="font-bold mb-2">Design</h3>
-                            <div className="grid grid-cols-3 gap-2">
-                                {[1, 2, 3, 4, 5, 6].map((i) => (
-                                    <motion.img
-                                        key={i}
-                                        src={`/api/placeholder/100/100?text=Design${i}`}
-                                        alt={`Design ${i}`}
-                                        className="w-full h-24 object-cover rounded transition-transform duration-300 hover:scale-105"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 0.5, delay: i * 0.1 }}
-                                    />
-                                ))}
-                            </div>
+                            <motion.div
+                                className={`text-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg hover:scale-105 transition-transform duration-300`}
+                            >
+                                <p className="font-bold text-xl">256</p>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Create Poem</p>
+                            </motion.div>
+                            <motion.div
+                                className={`text-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg hover:scale-105 transition-transform duration-300`}
+                            >
+                                <p className="font-bold text-xl">852</p>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Ask Anything</p>
+                            </motion.div>
+                            <motion.div
+                                className={`text-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg hover:scale-105 transition-transform duration-300`}
+                            >
+                                <p className="font-bold text-xl">797</p>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Language Translation</p>
+                            </motion.div>
+                            <motion.div
+                                className={`text-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg hover:scale-105 transition-transform duration-300`}
+                            >
+                                <p className="font-bold text-xl">222</p>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Recipe Suggestions</p>
+                            </motion.div>
+                            <motion.div
+                                className={`text-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg hover:scale-105 transition-transform duration-300`}
+                            >
+                                <p className="font-bold text-xl">785</p>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Fitness Coach</p>
+                            </motion.div>
+                            <motion.div
+                                className={`text-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded-lg hover:scale-105 transition-transform duration-300`}
+                            >
+                                <p className="font-bold text-xl">999</p>
+                                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Music Recommendations</p>
+                            </motion.div>
                         </motion.div>
                     </motion.div>
                 )}
