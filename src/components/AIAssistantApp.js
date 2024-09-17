@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, Send, Heart, MessageSquare, AlertTriangle, Camera, Settings, LogOut, Sun, Moon, Home, Bell, User, BarChart2, Bot, Menu, Search, Calendar, X, Filter, Mail, Phone, Linkedin, Github, Briefcase, Award } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, BarChart, Bar, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
@@ -16,6 +16,7 @@ const AIAssistantApp = () => {
     const [showAiAssistantChat, setShowAiAssistantChat] = useState(false);
     const [selectedFeature, setSelectedFeature] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const sidebarRef = useRef(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState('');
     const [chatHistoryFilter, setChatHistoryFilter] = useState('');
@@ -61,6 +62,19 @@ const AIAssistantApp = () => {
         // Save theme preference to localStorage
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
     }, [isDarkMode]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+                setSidebarOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const toggleTheme = () => {
         setIsDarkMode(!isDarkMode);
@@ -158,8 +172,24 @@ const AIAssistantApp = () => {
         { name: 'Language Translation', color: 'bg-red-600' },
         { name: 'Recipe Suggestions', color: 'bg-orange-600' },
         { name: 'Fitness Coach', color: 'bg-teal-600' },
-        { name: 'Music Recommendations', color: 'bg-indigo-600' }
+        { name: 'Music Recommendations', color: 'bg-indigo-600' },
+        { name: 'Math Solver', color: 'bg-cyan-600' },
+        { name: 'Grammar Checker', color: 'bg-lime-600' },
+        { name: 'Programming Help', color: 'bg-emerald-600' },
+        { name: 'Time Zone Converter', color: 'bg-amber-600' },
+        { name: 'Pet Care Tips', color: 'bg-sky-600' },
+        { name: 'Travel Advice', color: 'bg-violet-600' },
+        { name: 'Word Definitions', color: 'bg-yellow-500' },
+        { name: 'Daily Motivational Quotes', color: 'bg-red-500' },
+        { name: 'Virtual Interview Practice', color: 'bg-blue-500' },
+        { name: 'Memory Techniques', color: 'bg-green-500' },
+        { name: 'Time Management Tips', color: 'bg-purple-500' },
+        { name: 'Positive Habit Formation', color: 'bg-pink-500' },
+        { name: 'Career Path Planning', color: 'bg-teal-500' },
+        { name: 'Speech Writing Help', color: 'bg-indigo-500' },
+        { name: 'Stress Relief Exercises', color: 'bg-orange-500' }
     ];
+
 
     const handleFeatureClick = (feature) => {
         setSelectedFeature(feature);
@@ -246,11 +276,14 @@ const AIAssistantApp = () => {
 
     const renderSidebar = () => {
         return (
-            <div className={`fixed top-0 left-0 h-full w-64 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50`}>
+            <div
+                ref={sidebarRef}
+                className={`fixed top-0 left-0 h-full w-64 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50`}
+            >
                 <div className="p-4">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
-                        <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700">
+                        <button onClick={() => setSidebarOpen(false)} className="text-gray-500 hover:text-gray-700">
                             <X size={24} />
                         </button>
                     </div>
