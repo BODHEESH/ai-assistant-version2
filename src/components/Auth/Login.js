@@ -79,7 +79,7 @@ export default function Login({ onToggle }) {
             onClick={onToggle}
             className="text-sm text-blue-600 hover:text-blue-800"
           >
-            Don't have an account? Sign up
+            Don&apos;t have an account? Sign up
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import { Camera } from 'lucide-react';
+import Image from 'next/image';
 
 const ProfileTab = ({ isDarkMode }) => {
   return (
@@ -17,10 +18,12 @@ const ProfileTab = ({ isDarkMode }) => {
         className="flex items-center mb-6"
       >
         <div className="relative">
-          <img
+          <Image
             src="https://imgcdn.stablediffusionweb.com/2024/4/12/3b464fee-5501-43b7-8ada-d3d25acf94d7.jpg"
             alt="Profile"
-            className="w-24 h-24 rounded-full object-cover"
+            width={40}
+            height={40}
+            className="rounded-full"
           />
           <button
             className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition duration-300"
