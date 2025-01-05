@@ -1,22 +1,27 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import ClientWrapper from '@/components/ClientWrapper';
+import { metadata } from './metadata';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata = {
-  title: 'AI Assistant App',
-  description: 'An AI-powered assistant application',
-};
-
-export default function RootLayout({ children }) {
+function RootLayoutClient({ children }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className="dark">
+      <head>
+        <meta name="color-scheme" content="dark" />
+      </head>
+      <body className={`${inter.className} dark:bg-gray-900 dark:text-white`}>
         <ClientWrapper>
           {children}
         </ClientWrapper>
       </body>
     </html>
   );
+}
+
+export { metadata };
+
+export default function RootLayout({ children }) {
+  return <RootLayoutClient>{children}</RootLayoutClient>;
 }

@@ -98,7 +98,23 @@ export const AuthContextProvider = ({ children }) => {
   const logout = async () => {
     try {
       console.log('Starting logout...');
+      // Clear any stored user data
+      localStorage.removeItem('user');
+      localStorage.removeItem('theme');
+      localStorage.removeItem('lastActive');
+      
+      // Sign out from Firebase
       await signOut(auth);
+      
+      // Reset any application state
+      setUser(null);
+      setLoading(false);
+      
+      // Force reload to clear any cached state
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+      
       console.log('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);

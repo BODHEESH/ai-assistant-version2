@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+'use client';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../../contexts/UserContext';
 
 export default function Signup({ onToggle }) {
@@ -6,7 +7,27 @@ export default function Signup({ onToggle }) {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const { signup } = useUser();
+
+  useEffect(() => {
+    // Check for dark mode preference
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme');
+      setIsDarkMode(savedTheme !== 'light'); // Default to dark if not explicitly set to light
+    }
+  }, []);
+
+  useEffect(() => {
+    // Apply dark mode class to document
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,17 +39,27 @@ export default function Signup({ onToggle }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className={`min-h-screen flex items-center justify-center bg-gradient-to-br ${
+      isDarkMode 
+        ? 'from-gray-900 via-gray-800 to-gray-900' 
+        : 'from-gray-100 via-white to-gray-100'
+    }`}>
+      <div className={`max-w-md w-full m-4 space-y-8 ${
+        isDarkMode 
+          ? 'bg-gray-800/50 text-white' 
+          : 'bg-white/50 text-gray-900'
+      } backdrop-blur-lg p-8 rounded-xl shadow-2xl border ${
+        isDarkMode ? 'border-gray-700' : 'border-gray-200'
+      }`}>
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-2 text-center text-3xl font-extrabold">
             Create your account
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+            <div className={`rounded-md ${isDarkMode ? 'bg-red-900/50' : 'bg-red-50'} p-4`}>
+              <div className={`text-sm ${isDarkMode ? 'text-red-200' : 'text-red-700'}`}>{error}</div>
             </div>
           )}
           <div className="rounded-md shadow-sm -space-y-px">
@@ -41,7 +72,11 @@ export default function Signup({ onToggle }) {
                 name="displayName"
                 type="text"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-t-md relative block w-full px-3 py-2 border ${
+                  isDarkMode 
+                    ? 'bg-gray-700/50 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:z-10 sm:text-sm`}
                 placeholder="Display Name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
@@ -57,7 +92,11 @@ export default function Signup({ onToggle }) {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className={`appearance-none relative block w-full px-3 py-2 border ${
+                  isDarkMode 
+                    ? 'bg-gray-700/50 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:z-10 sm:text-sm`}
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -73,7 +112,11 @@ export default function Signup({ onToggle }) {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-b-md relative block w-full px-3 py-2 border ${
+                  isDarkMode 
+                    ? 'bg-gray-700/50 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:z-10 sm:text-sm`}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -93,7 +136,11 @@ export default function Signup({ onToggle }) {
         <div className="text-center">
           <button
             onClick={onToggle}
-            className="text-sm text-blue-600 hover:text-blue-800"
+            className={`text-sm ${
+              isDarkMode 
+                ? 'text-blue-400 hover:text-blue-300' 
+                : 'text-blue-600 hover:text-blue-800'
+            }`}
           >
             Already have an account? Sign in
           </button>

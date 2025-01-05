@@ -1,14 +1,14 @@
 'use client';
-import { Home, MessageSquare, Bell, User, Bot, BarChart } from 'lucide-react';
+import { Home, MessageSquare, Bell, User, Bot, BarChart2, Settings } from 'lucide-react';
 
 const BottomNav = ({ activeTab, setActiveTab, isDarkMode }) => {
   const navItems = [
     { name: 'Home', icon: Home, id: 'home' },
-    { name: 'AI Assistant', icon: Bot, id: 'ai-assistant' },
+    { name: 'Bodhi-AI', icon: Bot, id: 'ai-assistant' },
     { name: 'Chat', icon: MessageSquare, id: 'chat' },
-    { name: 'Dashboard', icon: BarChart, id: 'dashboard' },
+    { name: 'Dashboard', icon: BarChart2, id: 'dashboard' },
     { name: 'Profile', icon: User, id: 'profile' },
-    { name: 'Notifications', icon: Bell, id: 'notifications' }
+    { name: 'Settings', icon: Settings, id: 'settings' }
   ];
 
   return (
@@ -26,8 +26,8 @@ const BottomNav = ({ activeTab, setActiveTab, isDarkMode }) => {
                   }`
             }`}
           >
-            <item.icon size={24} />
-            <span className="text-xs mt-1">{item.name}</span>
+            <item.icon size={20} className="mb-0.5" />
+            <span className="text-[10px] leading-tight">{item.name}</span>
           </button>
         ))}
       </div>

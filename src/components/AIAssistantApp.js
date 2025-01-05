@@ -8,11 +8,13 @@ import AIAssistantChat from './ai/AIAssistantChat';
 import NotificationsTab from './ai/NotificationsTab';
 import ProfileTab from './ai/ProfileTab';
 import Dashboard from './Dashboard';
+import Chat from './ai/Chat';
 import { promptTemplates } from '@/utils/promptTemplates';
 import { generateResponse } from '@/services/groqService';
 import BottomNav from './ai/BottomNav';
 import { ChevronRight, Send, Heart, MessageSquare, AlertTriangle, Camera, Settings, LogOut, Sun, Moon, Home, Bell, User, BarChart2, Bot, Menu, Search, Calendar, X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
 
 const features = [
   { name: 'Chat Assistant', color: 'bg-blue-600', category: 'general' },
@@ -116,6 +118,7 @@ function getFeatureDescription(featureName) {
 }
 
 const AIAssistantApp = () => {
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState([]);
@@ -131,6 +134,8 @@ const AIAssistantApp = () => {
   const [aiAssistantInput, setAiAssistantInput] = useState('');
   const [aiAssistantLanguage, setAiAssistantLanguage] = useState('English');
   const [aiAssistantDescription, setAiAssistantDescription] = useState('');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -289,95 +294,29 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
     return selectedFeature ? selectedFeature.color : 'bg-blue-600';
   };
 
-  const handleLogout = () => {
-    console.log('Logging out...');
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      console.log('Logging out...');
+      await logout();
+      // Redirect will be handled by the AuthContext logout function
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // You can add error handling UI here if needed
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
+    }
   };
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  return (
-    <>
-    <div className={`flex flex-col h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-slate-100 text-gray-700'} font-sans`}>
-      {/* Header */}
-      <header className={`p-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex justify-between items-center`}>
-        <div className="flex items-center">
-          <button onClick={toggleSidebar} className="mr-4">
-            <Menu size={24} />
-          </button>
-          <h1 className="text-2xl font-bold" onClick={handleLogoClick}>AI-Assistant-Bodhi</h1>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button onClick={toggleTheme} className={`${isDarkMode ? 'text-yellow-300' : 'text-gray-600'} hover:text-yellow-500`}>
-            {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
-          </button>
-          <button onClick={() => setActiveTab('settings')} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
-            <Settings size={24} />
-          </button>
-          <button onClick={handleLogout} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
-            <LogOut size={24} />
-          </button>
-        </div>
-      </header>
-
-      {/* Sidebar */}
-      <div
-        ref={sidebarRef}
-        className={`fixed top-0 left-0 h-full w-64 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50`}
-      >
-        <div className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
-            <button onClick={() => setSidebarOpen(false)} className="text-gray-500 hover:text-gray-700">
-              <X size={24} />
-            </button>
-          </div>
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <Search size={20} className="mr-2" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full p-2 rounded ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
-              />
-            </div>
-            <div className="flex items-center">
-              <Calendar size={20} className="mr-2" />
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className={`w-full p-2 rounded ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
-              />
-            </div>
-          </div>
-          <div className="overflow-y-auto h-3/4">
-            <h3 className="font-semibold mb-2">History</h3>
-            <ul className="space-y-2">
-              {chatHistory.map((chat, index) => (
-                <li key={index} className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}>
-                  <p className="text-sm">{chat.title}</p>
-                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{chat.date}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            <ul className="text-xs space-y-1">
-              <li><a href="#" className="hover:underline">Privacy Policy</a></li>
-              <li><a href="#" className="hover:underline">Pricing</a></li>
-              <li><a href="#" className="hover:underline">How to use the app</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="flex-grow overflow-y-auto">
-        {activeTab === 'home' && (
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
           <div className={`p-6 pb-24 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
             <header className="mb-12 text-center">
               <motion.div
@@ -485,9 +424,9 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
               ))}
             </motion.section>
           </div>
-        )}
-
-        {activeTab === 'ai-assistant' && (
+        );
+      case 'ai-assistant':
+        return (
           <div className="flex flex-col h-[calc(100vh-8rem)]">
             {!showAiAssistantChat ? (
               <motion.div
@@ -659,28 +598,156 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
               </div>
             )}
           </div>
-        )}
+        );
+      case 'chat':
+        return <Chat />;
+      case 'dashboard':
+        return <Dashboard isDarkMode={isDarkMode} />;
+      case 'notifications':
+        return <NotificationsTab isDarkMode={isDarkMode} notifications={notifications} />;
+      case 'profile':
+        return <ProfileTab isDarkMode={isDarkMode} />;
+      default:
+        return (
+          <div className={`p-6 pb-24 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+            {/* Existing home content */}
+          </div>
+        );
+    }
+  };
 
-        {activeTab === 'dashboard' && (
-          <Dashboard isDarkMode={isDarkMode} />
-        )}
+  return (
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+      {/* Header */}
+      <header className={`p-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex justify-between items-center`}>
+        <div className="flex items-center">
+          <button onClick={toggleSidebar} className="mr-4">
+            <Menu size={24} />
+          </button>
+          <h1 className="text-2xl font-bold" onClick={handleLogoClick}>AI-Assistant-Bodhi</h1>
+        </div>
+        <div className="flex items-center space-x-4">
+          <button onClick={toggleTheme} className={`${isDarkMode ? 'text-yellow-300' : 'text-gray-600'} hover:text-yellow-500`}>
+            {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
+          </button>
+          <button onClick={() => setActiveTab('settings')} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+            <Settings size={24} />
+          </button>
+          <button onClick={() => setShowLogoutModal(true)} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+            <LogOut size={24} />
+          </button>
+        </div>
+      </header>
 
-        {activeTab === 'notifications' && (
-          <NotificationsTab isDarkMode={isDarkMode} notifications={notifications} />
-        )}
+      {/* Sidebar */}
+      <div
+        ref={sidebarRef}
+        className={`fixed top-0 left-0 h-full w-64 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50`}
+      >
+        <div className="p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
+            <button onClick={() => setSidebarOpen(false)} className="text-gray-500 hover:text-gray-700">
+              <X size={24} />
+            </button>
+          </div>
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <Search size={20} className="mr-2" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`w-full p-2 rounded ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
+              />
+            </div>
+            <div className="flex items-center">
+              <Calendar size={20} className="mr-2" />
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className={`w-full p-2 rounded ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto h-3/4">
+            <h3 className="font-semibold mb-2">History</h3>
+            <ul className="space-y-2">
+              {chatHistory.map((chat, index) => (
+                <li key={index} className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}>
+                  <p className="text-sm">{chat.title}</p>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{chat.date}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <ul className="text-xs space-y-1">
+              <li><a href="#" className="hover:underline">Privacy Policy</a></li>
+              <li><a href="#" className="hover:underline">Pricing</a></li>
+              <li><a href="#" className="hover:underline">How to use the app</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
-        {activeTab === 'profile' && (
-          <ProfileTab isDarkMode={isDarkMode} />
-        )}
+      {/* Main Content */}
+      <main className="flex-grow overflow-y-auto">
+        {renderContent()}
       </main>
 
-    </div>
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div 
+            className={`${
+              isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+            } rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl transform transition-all`}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">Confirm Logout</h3>
+              <button 
+                onClick={() => setShowLogoutModal(false)}
+                className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-6`}>
+              Are you sure you want to log out of your account?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className={`px-4 py-2 rounded-md ${
+                  isDarkMode 
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className={`px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 ${
+                  isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <BottomNav 
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         isDarkMode={isDarkMode}
       />
-      </>
+    </div>
   );
 };
 
