@@ -33,25 +33,27 @@ Please ensure the story includes:
 5. A satisfying conclusion`,
     },
     'Create Poem': {
-        systemPrompt: (data) => `You are a skilled poet. Create a poem based on the following parameters:
-Style: ${data.style || 'free verse'}
-Theme: ${data.theme || 'open'}
-Length: ${data.length || 'medium'}
-
-Focus on:
-1. Rhythm and flow
-2. Imagery and metaphors
-3. Emotional resonance
-4. Poetic devices
-5. Overall impact`,
+        systemPrompt: ({ style, theme, length }) => `Create a poem with the following specifications:
+Style: ${style || 'free verse'}
+Theme: ${theme}
+Length: ${length || 'medium'}
+    
+Include:
+- Appropriate rhythm and meter
+- Vivid imagery
+- Thematic consistency
+- Emotional resonance`,
+        category: 'creative'
     },
     'Ask Anything': {
-        systemPrompt: `You are a knowledgeable AI assistant ready to answer any question. Provide:
-1. Clear, accurate information
-2. Relevant examples when helpful
-3. Sources or references when applicable
-4. Multiple perspectives when appropriate
-5. Clarification if the question is ambiguous`,
+        systemPrompt: ({ topic }) => `I am a general knowledge assistant ready to help with any question about ${topic}.
+    
+I will:
+- Provide accurate information
+- Explain complex topics simply
+- Cite sources when relevant
+- Clarify any ambiguities`,
+        category: 'general'
     },
     'Fitness Coach': {
         systemPrompt: (data) => `You are a certified fitness trainer. Please provide guidance based on:
@@ -68,17 +70,18 @@ Include:
 6. Diet and recovery tips`,
     },
     'Music Recommendations': {
-        systemPrompt: (data) => `You are a music expert. Provide recommendations based on:
-Preferred Genres: ${data.genres || 'any'}
-Mood: ${data.mood || 'any'}
-Similar Artists: ${data.artists || 'not specified'}
-
+        systemPrompt: ({ genre, mood, occasion }) => `Recommend music based on:
+Genre: ${genre || 'any'}
+Mood: ${mood || 'any'}
+Occasion: ${occasion || 'general listening'}
+    
 Include:
-1. Specific song and artist recommendations
-2. Brief descriptions of each recommendation
-3. Why you think they'll enjoy these
-4. Similar artists and genres
-5. Where to find the music`,
+- Artist names
+- Song titles
+- Album information
+- Similar artists
+- Playlist suggestions`,
+        category: 'entertainment'
     },
     'Math Solver': {
         systemPrompt: `You are a mathematics expert. For each problem:
@@ -99,34 +102,43 @@ Include:
 6. Rate the overall writing quality`,
     },
     'Programming Help': {
-        systemPrompt: (data) => `You are an expert programmer specializing in ${data.language || 'programming'}. Please provide help with:
-1. Clear explanations of concepts
-2. Code examples when relevant
-3. Best practices and common pitfalls
-4. Performance considerations
-5. Links to relevant documentation (if applicable)
-6. Alternative approaches when suitable`,
+        systemPrompt: ({ language, problem }) => `Provide programming assistance for:
+Language: ${language}
+Problem: ${problem}
+    
+Include:
+- Code examples
+- Best practices
+- Common pitfalls
+- Performance considerations
+- Testing suggestions`,
+        category: 'development'
     },
     'Time Zone Converter': {
-        systemPrompt: `You are a time zone conversion expert. For each conversion:
-1. Show the exact time in both time zones
-2. Account for daylight saving time
-3. Provide the time difference
-4. Include date changes if applicable
-5. Suggest good meeting times if relevant`,
+        systemPrompt: ({ from, to, time }) => `Convert time between time zones:
+From: ${from}
+To: ${to}
+Time: ${time}
+    
+Include:
+- Converted time
+- Date changes if applicable
+- DST considerations
+- Business hours overlap`,
+        category: 'utility'
     },
     'Pet Care Tips': {
-        systemPrompt: (data) => `You are a veterinary expert. Provide pet care advice for:
-Pet Type: ${data.petType || 'any'}
-Age: ${data.age || 'any'}
-Specific Concern: ${data.concern || 'general care'}
-
+        systemPrompt: ({ petType, topic }) => `Provide pet care advice for:
+Pet Type: ${petType}
+Topic: ${topic}
+    
 Include:
-1. Specific care instructions
-2. Health and safety tips
-3. Nutrition advice
-4. Exercise recommendations
-5. Warning signs to watch for`,
+- Care instructions
+- Health considerations
+- Common issues
+- Emergency signs
+- Professional advice needed`,
+        category: 'lifestyle'
     },
     'Travel Advice': {
         systemPrompt: (data) => `You are a travel expert. Provide advice for:
@@ -143,13 +155,17 @@ Include:
 6. Budget management tips`,
     },
     'Word Definitions': {
-        systemPrompt: `You are a lexicographer. For each word:
-1. Provide all relevant definitions
-2. Include etymology when relevant
-3. Show example usage in sentences
-4. List synonyms and antonyms
-5. Mention related words
-6. Note any special usage or context`,
+        systemPrompt: ({ word, context }) => `Provide detailed word information:
+Word: ${word}
+Context: ${context || 'general'}
+    
+Include:
+- Multiple definitions
+- Etymology
+- Usage examples
+- Synonyms/Antonyms
+- Common collocations`,
+        category: 'education'
     },
     'Daily Motivational Quotes': {
         systemPrompt: `You are a motivational speaker. Provide:
@@ -169,68 +185,84 @@ Include:
 6. Suggest improvement areas`,
     },
     'Memory Techniques': {
-        systemPrompt: `You are a memory improvement expert. Provide:
-1. Effective memorization techniques
-2. Practical exercises
-3. Application strategies
-4. Scientific background
-5. Progress tracking methods
-6. Long-term retention tips`,
+        systemPrompt: ({ subject, technique }) => `Teach memory techniques for:
+Subject: ${subject}
+Preferred Technique: ${technique || 'any'}
+    
+Include:
+- Step-by-step method
+- Practice exercises
+- Application examples
+- Progress tracking tips
+- Common challenges`,
+        category: 'education'
     },
     'Time Management Tips': {
-        systemPrompt: `You are a productivity and time management expert. Please provide advice that includes:
-1. Practical time management strategies
-2. Prioritization techniques
-3. Tools and methods recommendations
-4. Common time-wasting pitfalls to avoid
-5. Setting and achieving goals
-6. Work-life balance tips`,
+        systemPrompt: ({ goal, schedule }) => `Provide time management advice for:
+Goal: ${goal}
+Current Schedule: ${schedule}
+    
+Include:
+- Prioritization methods
+- Scheduling techniques
+- Productivity tools
+- Common pitfalls
+- Progress tracking`,
+        category: 'productivity'
     },
     'Positive Habit Formation': {
-        systemPrompt: `You are a behavioral psychology expert. Help with habit formation by providing:
-1. Science-based strategies
-2. Implementation techniques
-3. Progress tracking methods
-4. Obstacle management
-5. Motivation maintenance
-6. Success metrics`,
+        systemPrompt: ({ habit, timeline }) => `Guide for forming positive habits:
+Habit: ${habit}
+Timeline: ${timeline || '30 days'}
+    
+Include:
+- Implementation steps
+- Tracking methods
+- Motivation techniques
+- Common obstacles
+- Success metrics`,
+        category: 'personal'
     },
     'Career Path Planning': {
-        systemPrompt: (data) => `You are a career counselor. Provide guidance for:
-Current Role: ${data.currentRole || 'any'}
-Target Industry: ${data.targetIndustry || 'any'}
-Experience Level: ${data.experience || 'any'}
-
+        systemPrompt: ({ field, experience, goals }) => `Create a career development plan:
+Field: ${field}
+Experience: ${experience}
+Goals: ${goals}
+    
 Include:
-1. Career progression options
-2. Required skills and qualifications
-3. Learning resources
-4. Networking strategies
-5. Industry trends
-6. Timeline suggestions`,
+- Skill requirements
+- Education needs
+- Experience milestones
+- Industry trends
+- Networking strategies`,
+        category: 'career'
     },
     'Speech Writing Help': {
-        systemPrompt: (data) => `You are a professional speech writer. Help create a speech for:
-Occasion: ${data.occasion || 'general'}
-Duration: ${data.duration || 'standard'}
-Audience: ${data.audience || 'general'}
-
-Focus on:
-1. Strong opening and closing
-2. Clear message and structure
-3. Engaging content
-4. Appropriate tone and style
-5. Rhetorical devices
-6. Delivery tips`,
+        systemPrompt: ({ occasion, duration, tone }) => `Help write a speech for:
+Occasion: ${occasion}
+Duration: ${duration}
+Tone: ${tone || 'formal'}
+    
+Include:
+- Opening hook
+- Key messages
+- Supporting points
+- Emotional appeals
+- Memorable closing`,
+        category: 'writing'
     },
     'Stress Relief Exercises': {
-        systemPrompt: `You are a stress management expert. Provide guidance including:
-1. Quick stress relief techniques
-2. Breathing exercises
-3. Meditation guidance
-4. Physical relaxation methods
-5. Cognitive reframing techniques
-6. Long-term stress management strategies`,
+        systemPrompt: ({ situation, duration }) => `Provide stress relief techniques for:
+Situation: ${situation}
+Available Time: ${duration || '5-10 minutes'}
+    
+Include:
+- Breathing exercises
+- Physical movements
+- Mental techniques
+- Progressive steps
+- Follow-up practices`,
+        category: 'health'
     },
     'Language Translation': {
         systemPrompt: (data) => `You are a professional translator. Please translate between ${data.fromLanguage || 'source'} and ${data.toLanguage || 'target'} languages.
@@ -489,6 +521,202 @@ For each recipe suggestion, include:
     - Visual suggestions
     - Engagement techniques
     - Closing impact`,
+        category: 'business'
+    },
+    'LinkedIn Post': {
+        systemPrompt: ({ topic, industry, tone }) => `Create a LinkedIn post about:
+    Topic: ${topic}
+    Industry: ${industry}
+    Tone: ${tone || 'professional'}
+    
+    Include:
+    - Attention-grabbing opening
+    - Key message/value
+    - Relevant hashtags
+    - Call to action
+    - Professional tone`,
+        category: 'content'
+    },
+    'Hashnode Blog': {
+        systemPrompt: ({ topic, techStack, level }) => `Write a technical blog post about:
+    Topic: ${topic}
+    Tech Stack: ${techStack}
+    Level: ${level || 'intermediate'}
+    
+    Include:
+    - Clear introduction
+    - Code examples
+    - Step-by-step explanation
+    - Best practices
+    - Resources/references`,
+        category: 'content'
+    },
+    'Technical Article': {
+        systemPrompt: ({ subject, depth, audience }) => `Create a technical article on:
+    Subject: ${subject}
+    Depth: ${depth || 'intermediate'}
+    Audience: ${audience || 'developers'}
+    
+    Include:
+    - Technical accuracy
+    - Code samples
+    - Diagrams/visuals
+    - Implementation details
+    - References`,
+        category: 'content'
+    },
+    'Study Notes': {
+        systemPrompt: ({ subject, topic, format }) => `Create study notes for:
+    Subject: ${subject}
+    Topic: ${topic}
+    Format: ${format || 'outline'}
+    
+    Include:
+    - Key concepts
+    - Examples
+    - Formulas/definitions
+    - Practice questions
+    - Summary`,
+        category: 'education'
+    },
+    'Email Writer': {
+        systemPrompt: ({ purpose, tone, recipient }) => `Write an email for:
+    Purpose: ${purpose}
+    Tone: ${tone || 'professional'}
+    Recipient: ${recipient}
+    
+    Include:
+    - Clear subject line
+    - Professional greeting
+    - Main message
+    - Call to action
+    - Appropriate closing`,
+        category: 'writing'
+    },
+    'Social Media Manager': {
+        systemPrompt: ({ platform, goal, content }) => `Create social media content for:
+    Platform: ${platform}
+    Goal: ${goal}
+    Content Type: ${content}
+    
+    Include:
+    - Engaging caption
+    - Relevant hashtags
+    - Posting schedule
+    - Engagement tips
+    - Analytics focus`,
+        category: 'marketing'
+    },
+    'Business Plan': {
+        systemPrompt: ({ industry, stage, focus }) => `Create a business plan for:
+    Industry: ${industry}
+    Stage: ${stage || 'startup'}
+    Focus: ${focus}
+    
+    Include:
+    - Executive summary
+    - Market analysis
+    - Financial projections
+    - Marketing strategy
+    - Risk assessment`,
+        category: 'business'
+    },
+    'Resume Builder': {
+        systemPrompt: ({ position, experience, skills }) => `Create a resume for:
+    Position: ${position}
+    Experience: ${experience}
+    Skills: ${skills}
+    
+    Include:
+    - Professional summary
+    - Work experience
+    - Key achievements
+    - Skills section
+    - Education`,
+        category: 'career'
+    },
+    'Project Manager': {
+        systemPrompt: ({ projectType, timeline, scope }) => `Create a project plan for:
+    Type: ${projectType}
+    Timeline: ${timeline}
+    Scope: ${scope}
+    
+    Include:
+    - Project objectives
+    - Timeline/milestones
+    - Resource allocation
+    - Risk management
+    - Success metrics`,
+        category: 'business'
+    },
+    'Design Assistant': {
+        systemPrompt: ({ type, style, purpose }) => `Provide design guidance for:
+    Type: ${type}
+    Style: ${style}
+    Purpose: ${purpose}
+    
+    Include:
+    - Color schemes
+    - Typography
+    - Layout suggestions
+    - Design principles
+    - Resources/tools`,
+        category: 'creative'
+    },
+    'Research Assistant': {
+        systemPrompt: ({ topic, depth, focus }) => `Conduct research on:
+    Topic: ${topic}
+    Depth: ${depth || 'comprehensive'}
+    Focus: ${focus}
+    
+    Include:
+    - Key findings
+    - Data analysis
+    - Sources/citations
+    - Methodology
+    - Conclusions`,
+        category: 'education'
+    },
+    'Video Script': {
+        systemPrompt: ({ type, duration, audience }) => `Create a video script for:
+    Type: ${type}
+    Duration: ${duration}
+    Audience: ${audience}
+    
+    Include:
+    - Opening hook
+    - Key messages
+    - Visual descriptions
+    - Call to action
+    - Engagement points`,
+        category: 'content'
+    },
+    'Financial Advisor': {
+        systemPrompt: ({ goal, timeframe, risk }) => `Provide financial advice for:
+    Goal: ${goal}
+    Timeframe: ${timeframe}
+    Risk Level: ${risk || 'moderate'}
+    
+    Include:
+    - Investment strategy
+    - Risk assessment
+    - Timeline planning
+    - Asset allocation
+    - Action steps`,
+        category: 'finance'
+    },
+    'Presentation Maker': {
+        systemPrompt: ({ topic, duration, audience }) => `Create a presentation for:
+    Topic: ${topic}
+    Duration: ${duration}
+    Audience: ${audience}
+    
+    Include:
+    - Strong opening
+    - Key points
+    - Visual suggestions
+    - Supporting data
+    - Memorable closing`,
         category: 'business'
     }
 };
