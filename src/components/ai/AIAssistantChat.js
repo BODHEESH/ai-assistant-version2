@@ -1,5 +1,5 @@
 'use client';
-import { motion } from 'framer-motion';
+import { motion, useEffect } from 'framer-motion';
 import { Send } from 'lucide-react';
 
 const AIAssistantChat = ({ 
@@ -18,8 +18,16 @@ const AIAssistantChat = ({
   setChatInput,
   getFeatureColor,
   setShowAiAssistantChat,
-  setIsLoading
+  setIsLoading,
+  selectedChat
 }) => {
+  useEffect(() => {
+    if (selectedChat) {
+      setAiAssistantInput(selectedChat.content || '');
+      setShowAiAssistantChat(true);
+    }
+  }, [selectedChat]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}

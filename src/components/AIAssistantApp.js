@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from './ai/Header';
 import Sidebar from './ai/Sidebar';
 import HomePage from './ai/HomePage';
@@ -12,6 +12,8 @@ import Chat from './ai/Chat';
 import SettingsPage from './ai/SettingsPage';
 import { promptTemplates } from '@/utils/promptTemplates';
 import { generateResponse } from '@/services/groqService';
+import { saveToFirebase } from '@/utils/firebaseHelper';
+import { fetchChats } from '@/utils/firebaseHelper';
 import BottomNav from './ai/BottomNav';
 import { ChevronRight, Send, Heart, MessageSquare, AlertTriangle, Camera, Settings, LogOut, Sun, Moon, Home, Bell, User, BarChart2, Bot, Menu, Search, Calendar, X } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -66,30 +68,8 @@ const notifications = [
   { id: 4, type: 'like', message: 'Sarah liked your comment', time: '2d ago' },
 ];
 
-const chatHistory = [
-  {
-    title: "Getting Started with Bodhi",
-    date: "2025-01-06",
-  },
-  {
-    title: "Code Review Discussion",
-    date: "2025-01-06",
-  },
-  {
-    title: "Story Writing Session",
-    date: "2025-01-05",
-  },
-  {
-    title: "Python Help",
-    date: "2025-01-05",
-  },
-  {
-    title: "Recipe Suggestions",
-    date: "2025-01-04",
-  }
-];
-
-function getFeatureDescription(featureName) {
+// Feature descriptions
+const getFeatureDescription = (featureName) => {
   const descriptions = {
     'Chat Assistant': 'Get help with any question or task',
     'Code Review': 'Get expert feedback on your code',
@@ -131,7 +111,7 @@ function getFeatureDescription(featureName) {
     'Presentation Maker': 'Create impactful presentations'
   };
   return descriptions[featureName] || 'Explore this feature';
-}
+};
 
 const AIAssistantApp = () => {
   const { logout } = useAuth();
@@ -141,6 +121,7 @@ const AIAssistantApp = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedChat, setSelectedChat] = useState(null);
   const sidebarRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
@@ -152,28 +133,98 @@ const AIAssistantApp = () => {
   const [aiAssistantDescription, setAiAssistantDescription] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [chatHistory, setChatHistory] = useState([
-    {
-      title: "Getting Started with Bodhi",
-      date: "2025-01-06",
-    },
-    {
-      title: "Code Review Discussion",
-      date: "2025-01-06",
-    },
-    {
-      title: "Story Writing Session",
-      date: "2025-01-05",
-    },
-    {
-      title: "Python Help",
-      date: "2025-01-05",
-    },
-    {
-      title: "Recipe Suggestions",
-      date: "2025-01-04",
+  const [chatHistory, setChatHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [filteredChats, setFilteredChats] = useState([]);
+
+  useEffect(() => {
+    loadChatHistory();
+  }, []);
+
+  useEffect(() => {
+    filterChats();
+  }, [chatHistory, searchTerm, dateFilter]);
+
+  const loadChatHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const chats = await fetchChats();
+
+      console.log("=============================", chats)
+      
+      // Transform chats into the required format
+      const formattedHistory = chats.map(chat => ({
+        id: chat.id,
+        title: chat.messages[0]?.content?.substring(0, 50) || 'New Chat',
+        timestamp: chat.timestamp,
+        assistantType: chat.assistantType,
+        messages: chat.messages
+      }));
+
+      setChatHistory(formattedHistory);
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    } finally {
+      setLoadingHistory(false);
     }
-  ]);
+  };
+
+  const filterChats = useCallback(() => {
+    if (!chatHistory) return [];
+
+    let filtered = [...chatHistory];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(chat => {
+        // Search in messages content
+        const messagesMatch = chat.messages?.some(msg => 
+          msg.content?.toLowerCase().includes(searchLower)
+        );
+        
+        // Search in assistant type
+        const typeMatch = chat.assistantType?.toLowerCase().includes(searchLower);
+        
+        return messagesMatch || typeMatch;
+      });
+    }
+
+    // Apply date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      filtered = filtered.filter(chat => {
+        const chatDate = new Date(chat.timestamp);
+        
+        switch (dateFilter) {
+          case 'today':
+            return chatDate >= today;
+          
+          case 'week': {
+            const weekAgo = new Date(today);
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            return chatDate >= weekAgo;
+          }
+          
+          case 'month': {
+            const monthAgo = new Date(today);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            return chatDate >= monthAgo;
+          }
+          
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Sort by date (newest first)
+    filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    setFilteredChats(filtered);
+  }, [chatHistory, searchTerm, dateFilter]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -216,6 +267,7 @@ const AIAssistantApp = () => {
 
     try {
       const messages = [];
+      let assistantData = {};
       
       if (selectedFeature) {
         const template = promptTemplates[selectedFeature.name];
@@ -229,6 +281,7 @@ const AIAssistantApp = () => {
               skill: message.match(/beginner|intermediate|advanced/i)?.[0] || 'any',
               ingredients: message.match(/with\s([^.!?]+)/i)?.[1] || 'standard pantry items'
             };
+            assistantData = data;
 
             messages.push({
               role: 'system',
@@ -240,6 +293,7 @@ const AIAssistantApp = () => {
               description: message.match(/description:\s*([^\n]+)/i)?.[1] || '',
               code: message.replace(/language:.*\n|description:.*\n/gi, '').trim()
             };
+            assistantData = data;
 
             messages.push({
               role: 'system',
@@ -251,6 +305,7 @@ const AIAssistantApp = () => {
               theme: message.match(/theme:\s*([^\n]+)/i)?.[1] || 'open',
               length: message.match(/length:\s*([^\n]+)/i)?.[1] || 'medium'
             };
+            assistantData = data;
 
             messages.push({
               role: 'system',
@@ -269,11 +324,33 @@ const AIAssistantApp = () => {
 
           // Get response from Groq API
           console.log('Sending to Groq:', messages); // Debug log
-          const response = await generateResponse(messages);
+          const response = await generateResponse(messages, selectedFeature.name);
           console.log('Received from Groq:', response); // Debug log
 
           // Add AI response to chat
           if (response) {
+            // Save user message to chats collection
+            await saveToFirebase({
+              collection: 'chats',
+              content: message,
+              role: 'user',
+              status: 'completed',
+              assistantType: selectedFeature.name,
+              templateData: assistantData,
+              systemPrompt: messages[0].content // Save the template prompt
+            });
+
+            // Save AI response to chats collection
+            await saveToFirebase({
+              collection: 'chats',
+              content: response,
+              role: 'assistant',
+              status: 'completed',
+              assistantType: selectedFeature.name,
+              templateData: assistantData,
+              systemPrompt: messages[0].content // Save the template prompt
+            });
+
             setChatMessages(prev => [...prev, {
               text: response,
               sender: 'ai',
@@ -286,10 +363,24 @@ const AIAssistantApp = () => {
       }
     } catch (error) {
       console.error('Error in handleSendMessage:', error);
+      
+      // Save error message to chats collection
+      if (selectedFeature) {
+        await saveToFirebase({
+          collection: 'chats',
+          content: 'Sorry, I encountered an error. Please try again.',
+          role: 'assistant',
+          status: 'error',
+          error: error.message,
+          assistantType: selectedFeature.name
+        });
+      }
+
       setChatMessages(prev => [...prev, {
         text: 'Sorry, I encountered an error. Please try again.',
         sender: 'ai',
-        error: true
+        error: true,
+        feature: selectedFeature?.name
       }]);
     } finally {
       setLoading(false);
@@ -349,6 +440,11 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleSelectChat = (chat) => {
+    setSelectedChat(chat);
+    setActiveTab('chat');
   };
 
   const renderContent = () => {
@@ -465,7 +561,7 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
           </div>
         );
       case 'chat':
-        return <Chat />;
+        return <Chat selectedChat={selectedChat} />;
       case 'settings':
         return <SettingsPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />;
       case 'ai-assistant':
@@ -694,71 +790,24 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
         ref={sidebarRef}
         className={`fixed top-0 left-0 h-full w-64 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50`}
       >
-        <div className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
-            <button onClick={() => setSidebarOpen(false)} className="text-gray-500 hover:text-gray-700">
-              <X size={24} />
-            </button>
-          </div>
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <Search size={20} className="mr-2" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full p-2 rounded ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
-              />
-            </div>
-            <div className="flex items-center">
-              <Calendar size={20} className="mr-2" />
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className={`w-full p-2 rounded ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'}`}
-              />
-            </div>
-          </div>
-          <div className="overflow-y-auto h-3/4">
-            <h3 className="font-semibold mb-2">History</h3>
-            <ul className="space-y-2">
-              {chatHistory.map((chat, index) => (
-                <li key={index} className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}>
-                  <p className="text-sm">{chat.title}</p>
-                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{chat.date}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            <ul className="text-xs space-y-1">
-              <li><a href="#" className="hover:underline">Privacy Policy</a></li>
-              <li><a href="#" className="hover:underline">Pricing</a></li>
-              <li><a href="#" className="hover:underline">How to use the app</a></li>
-            </ul>
-          </div>
-        </div>
+        <Sidebar 
+          isDarkMode={isDarkMode}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          activeTab={activeTab}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          filteredChats={filteredChats}
+          setActiveTab={setActiveTab}
+          onSelectChat={handleSelectChat}
+        />
       </div>
 
       {/* Main Content */}
       <main className="flex-grow overflow-y-auto">
         <BackButtonHandler activeTab={activeTab} setActiveTab={handleTabChange} />
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          isDarkMode={isDarkMode}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          dateFilter={dateFilter}
-          setDateFilter={setDateFilter}
-          chatHistory={chatHistory}
-          sidebarRef={sidebarRef}
-        />
         {renderContent()}
       </main>
 

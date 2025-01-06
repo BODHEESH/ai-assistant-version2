@@ -15,6 +15,8 @@ import {
   Legend,
 } from 'chart.js';
 import { Line, Bar, Pie } from 'react-chartjs-2';
+import { db, auth } from '@/config/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 ChartJS.register(
   CategoryScale,
@@ -28,43 +30,44 @@ ChartJS.register(
   Legend
 );
 
+const truncateText = (text, maxLength = 50) => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
 const DashboardPage = ({ isDarkMode }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [sortField, setSortField] = useState('date');
   const [sortDirection, setSortDirection] = useState('desc');
-
-  // Dummy data
-  const stats = {
-    totalChats: 6,
-    codeReviews: 8,
-    totalResponses: 14
-  };
-
-  const activityData = {
-    labels: ['2024-09-11', '2024-09-12', '2024-09-13', '2024-09-14'],
+  const [stats, setStats] = useState({
+    totalChats: 0,
+    assistantTypes: 0,
+    totalResponses: 0
+  });
+  const [activityData, setActivityData] = useState({
+    labels: [],
     datasets: [
       {
-        label: 'Activity',
-        data: [1, 1, 4, 2],
+        label: 'Chats',
+        data: [],
         borderColor: '#60A5FA',
         backgroundColor: 'rgba(96, 165, 250, 0.5)',
         tension: 0.4
       },
       {
-        label: 'Responses',
-        data: [1, 1, 3, 3],
+        label: 'AI Responses',
+        data: [],
         borderColor: '#34D399',
         backgroundColor: 'rgba(52, 211, 153, 0.5)',
         tension: 0.4
       }
     ]
-  };
-
-  const distributionData = {
-    labels: ['Code Review', 'Chats', 'Fitness Coach', 'Poem', 'Story'],
+  });
+  const [distributionData, setDistributionData] = useState({
+    labels: [],
     datasets: [{
-      data: [8, 6, 3, 2, 1],
+      data: [],
       backgroundColor: [
         '#60A5FA',
         '#34D399',
@@ -73,29 +76,19 @@ const DashboardPage = ({ isDarkMode }) => {
         '#A78BFA'
       ]
     }]
-  };
-
-  const pieData = {
-    labels: ['Chat', 'Code Review'],
+  });
+  const [chatHistory, setChatHistory] = useState([]);
+  const [pieData, setPieData] = useState({
+    labels: [],
     datasets: [{
-      data: [43, 57],
+      data: [],
       backgroundColor: [
         '#34D399',
         '#60A5FA'
       ]
     }]
-  };
-
-  const chatHistory = [
-    { title: 'Wayanad landslide', date: '14/09/2024', type: 'chat' },
-    { title: 'Code Review: JavaScript', date: '14/09/2024', type: 'code' },
-    { title: 'Code Review: Java', date: '14/09/2024', type: 'code' },
-    { title: 'Create a documentation', date: '14/09/2024', type: 'chat' },
-    { title: 'How to sleep in two minutes', date: '14/09/2024', type: 'chat' },
-    { title: 'Tell me a story', date: '14/09/2024', type: 'chat' }
-  ];
-
-  const chartOptions = {
+  });
+  const [chartOptions, setChartOptions] = useState({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -125,9 +118,8 @@ const DashboardPage = ({ isDarkMode }) => {
         }
       }
     }
-  };
-
-  const pieOptions = {
+  });
+  const [pieOptions, setPieOptions] = useState({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -138,19 +130,191 @@ const DashboardPage = ({ isDarkMode }) => {
         }
       }
     }
-  };
+  });
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!auth.currentUser) return;
+
+      try {
+        // Simple query without ordering
+        const chatsQuery = query(
+          collection(db, 'chats'),
+          where('userId', '==', auth.currentUser.uid)
+        );
+        
+        const chatsSnapshot = await getDocs(chatsQuery);
+        
+        // Process messages
+        const processedChats = [];
+        const chatGroups = new Map(); // Group messages by their parent chat
+
+        // First pass: collect all messages by their parent chat
+        chatsSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const timestamp = data.timestamp?.toDate?.() || new Date(data.timestamp);
+          
+          if (data.assistantType) {
+            // This is a parent chat message
+            chatGroups.set(doc.id, {
+              id: doc.id,
+              assistantType: data.assistantType,
+              content: data.content,
+              timestamp,
+              messages: []
+            });
+          } else if (data.parentChatId && chatGroups.has(data.parentChatId)) {
+            // This is a child message
+            const chat = chatGroups.get(data.parentChatId);
+            chat.messages.push({
+              role: data.role,
+              content: data.content,
+              timestamp
+            });
+          }
+        });
+
+        // Convert to array and sort by timestamp
+        processedChats.push(...Array.from(chatGroups.values())
+          .sort((a, b) => b.timestamp - a.timestamp));
+
+        // Update chat history
+        const formattedHistory = processedChats.map(chat => ({
+          title: truncateText(chat.content || 'Untitled Chat'),
+          fullTitle: chat.content || 'Untitled Chat', // Store full title for tooltip
+          date: chat.timestamp.toLocaleDateString(),
+          type: truncateText(chat.assistantType || 'General Chat', 20)
+        }));
+        setChatHistory(formattedHistory);
+
+        // Calculate stats
+        const totalChats = processedChats.length;
+        const assistantTypes = processedChats.reduce((acc, chat) => {
+          const type = chat.assistantType || 'General Chat';
+          acc[type] = (acc[type] || 0) + 1;
+          return acc;
+        }, {});
+
+        const totalResponses = processedChats.reduce((acc, chat) => 
+          acc + chat.messages.filter(msg => msg.role === 'assistant').length, 0
+        );
+
+        setStats({
+          totalChats,
+          assistantTypes: Object.keys(assistantTypes).length,
+          totalResponses
+        });
+
+        // Calculate activity data
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          return date.toISOString().split('T')[0];
+        }).reverse();
+
+        const activityCounts = last7Days.map(date => {
+          const dayChats = processedChats.filter(chat => {
+            const chatDate = chat.timestamp.toISOString().split('T')[0];
+            return chatDate === date;
+          });
+
+          return {
+            date,
+            chats: dayChats.length,
+            responses: dayChats.reduce((acc, chat) => 
+              acc + chat.messages.filter(msg => msg.role === 'assistant').length, 0
+            )
+          };
+        });
+
+        setActivityData({
+          labels: last7Days.map(date => new Date(date).toLocaleDateString()),
+          datasets: [
+            {
+              label: 'Chats',
+              data: activityCounts.map(count => count.chats),
+              borderColor: '#60A5FA',
+              backgroundColor: 'rgba(96, 165, 250, 0.5)',
+              tension: 0.4
+            },
+            {
+              label: 'AI Responses',
+              data: activityCounts.map(count => count.responses),
+              borderColor: '#34D399',
+              backgroundColor: 'rgba(52, 211, 153, 0.5)',
+              tension: 0.4
+            }
+          ]
+        });
+
+        // Calculate distribution data
+        const colors = [
+          '#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA',
+          '#EC4899', '#8B5CF6', '#6366F1', '#10B981', '#F59E0B'
+        ];
+
+        setDistributionData({
+          labels: Object.keys(assistantTypes),
+          datasets: [{
+            data: Object.values(assistantTypes),
+            backgroundColor: colors.slice(0, Object.keys(assistantTypes).length)
+          }]
+        });
+
+        // Update pie chart for top assistant types
+        const topTypes = Object.entries(assistantTypes)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 5);
+
+        setPieData({
+          labels: topTypes.map(([type]) => type),
+          datasets: [{
+            data: topTypes.map(([,count]) => count),
+            backgroundColor: colors.slice(0, topTypes.length)
+          }]
+        });
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    };
+
+    fetchDashboardData();
+  }, [auth.currentUser]);
 
   const filteredHistory = chatHistory
-    .filter(item => 
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (!dateFilter || item.date.includes(dateFilter))
-    )
-    .sort((a, b) => {
-      const direction = sortDirection === 'asc' ? 1 : -1;
-      if (sortField === 'date') {
-        return direction * (new Date(b.date) - new Date(a.date));
+    .filter(item => {
+      const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (!dateFilter) return matchesSearch;
+      
+      const itemDate = new Date(item.date);
+      const today = new Date();
+      const weekAgo = new Date(today);
+      weekAgo.setDate(today.getDate() - 7);
+      const monthAgo = new Date(today);
+      monthAgo.setMonth(today.getMonth() - 1);
+      
+      switch (dateFilter) {
+        case 'today':
+          return matchesSearch && itemDate.toDateString() === today.toDateString();
+        case 'week':
+          return matchesSearch && itemDate >= weekAgo;
+        case 'month':
+          return matchesSearch && itemDate >= monthAgo;
+        default:
+          return matchesSearch;
       }
-      return direction * (a.title.localeCompare(b.title));
+    })
+    .sort((a, b) => {
+      const aValue = sortField === 'date' ? new Date(a.date) : a.title;
+      const bValue = sortField === 'date' ? new Date(b.date) : b.title;
+      
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
     });
 
   const handleSort = (field) => {
@@ -158,7 +322,7 @@ const DashboardPage = ({ isDarkMode }) => {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection('desc');
     }
   };
 
@@ -170,19 +334,38 @@ const DashboardPage = ({ isDarkMode }) => {
     >
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {Object.entries(stats).map(([key, value]) => (
-          <motion.div
-            key={key}
-            initial={{ scale: 0.95 }}
-            animate={{ scale: 1 }}
-            className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}
-          >
-            <h3 className="text-lg font-semibold mb-2">
-              {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-            </h3>
-            <p className="text-3xl font-bold">{value}</p>
-          </motion.div>
-        ))}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}
+        >
+          <h3 className="text-lg font-semibold mb-2">Total Chats</h3>
+          <p className="text-3xl font-bold">{stats.totalChats}</p>
+          <p className="text-sm text-gray-500 mt-1">All-time conversations</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}
+        >
+          <h3 className="text-lg font-semibold mb-2">Assistant Types</h3>
+          <p className="text-3xl font-bold">{stats.assistantTypes}</p>
+          <p className="text-sm text-gray-500 mt-1">Different AI assistants used</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}
+        >
+          <h3 className="text-lg font-semibold mb-2">Total Responses</h3>
+          <p className="text-3xl font-bold">{stats.totalResponses}</p>
+          <p className="text-sm text-gray-500 mt-1">AI assistant responses</p>
+        </motion.div>
       </div>
 
       {/* Charts */}
@@ -199,7 +382,7 @@ const DashboardPage = ({ isDarkMode }) => {
           className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}
           style={{ height: '300px' }}
         >
-          <h3 className="text-lg font-semibold mb-4">Chat vs Code Review</h3>
+          <h3 className="text-lg font-semibold mb-4">Top Assistant Types</h3>
           <Pie data={pieData} options={pieOptions} />
         </motion.div>
       </div>
@@ -208,7 +391,7 @@ const DashboardPage = ({ isDarkMode }) => {
         className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg mb-8`}
         style={{ height: '300px' }}
       >
-        <h3 className="text-lg font-semibold mb-4">Feature Distribution</h3>
+        <h3 className="text-lg font-semibold mb-4">Assistant Type Distribution</h3>
         <Bar data={distributionData} options={chartOptions} />
       </motion.div>
 
@@ -241,11 +424,11 @@ const DashboardPage = ({ isDarkMode }) => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px]">
+          <table className="min-w-full table-auto">
             <thead>
-              <tr className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <th
-                  className="py-3 text-left cursor-pointer"
+              <tr className="bg-gray-100 dark:bg-gray-700">
+                <th 
+                  className="px-4 py-2 text-left cursor-pointer"
                   onClick={() => handleSort('title')}
                 >
                   <div className="flex items-center gap-2">
@@ -253,8 +436,8 @@ const DashboardPage = ({ isDarkMode }) => {
                     <ArrowUpDown size={16} />
                   </div>
                 </th>
-                <th
-                  className="py-3 text-left cursor-pointer"
+                <th 
+                  className="px-4 py-2 text-left cursor-pointer"
                   onClick={() => handleSort('date')}
                 >
                   <div className="flex items-center gap-2">
@@ -262,27 +445,33 @@ const DashboardPage = ({ isDarkMode }) => {
                     <ArrowUpDown size={16} />
                   </div>
                 </th>
-                <th className="py-3 text-left">Type</th>
+                <th className="px-4 py-2 text-left">Type</th>
               </tr>
             </thead>
             <tbody>
               {filteredHistory.map((item, index) => (
                 <tr
                   key={index}
-                  className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
+                  className={`border-b ${
+                    isDarkMode ? 'border-gray-700' : 'border-gray-200'
+                  } hover:bg-gray-50 dark:hover:bg-gray-800`}
                 >
-                  <td className="py-3">{item.title}</td>
-                  <td className="py-3">{item.date}</td>
-                  <td className="py-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-sm ${
-                        item.type === 'chat'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}
+                  <td className="px-4 py-2">
+                    <div 
+                      className="cursor-help" 
+                      title={item.fullTitle}
+                    >
+                      {item.title}
+                    </div>
+                  </td>
+                  <td className="px-4 py-2">{item.date}</td>
+                  <td className="px-4 py-2">
+                    <div 
+                      className="cursor-help" 
+                      title={item.type.length > 20 ? item.type : ''}
                     >
                       {item.type}
-                    </span>
+                    </div>
                   </td>
                 </tr>
               ))}
