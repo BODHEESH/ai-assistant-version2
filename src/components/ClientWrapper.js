@@ -2,10 +2,12 @@
 import { AuthContextProvider } from '@/contexts/AuthContext';
 import ThemeInitializer from './ThemeInitializer';
 import { Toaster } from 'react-hot-toast';
+import BackButtonHandler from './BackButtonHandler';
 
 export default function ClientWrapper({ children }) {
   return (
     <AuthContextProvider>
+      <BackButtonHandler />
       <ThemeInitializer />
       <Toaster 
         position="top-right"

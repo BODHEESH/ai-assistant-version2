@@ -23,18 +23,23 @@ const Header = ({ isDarkMode, toggleTheme, toggleSidebar, handleLogoClick, handl
       <header className={`fixed top-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg z-40`}>
         <div className="flex justify-between items-center p-4">
           <div className="flex items-center space-x-4">
-            <button onClick={toggleSidebar} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+            <button onClick={toggleSidebar} className={`mr-4 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-black'}`}>
               <Menu size={24} />
             </button>
-            <h1 className="text-2xl font-bold" onClick={handleLogoClick}>AI-Assistant-Bodhi</h1>
+            <h1 
+              onClick={handleLogoClick} 
+              className={`text-xl font-bold cursor-pointer ${isDarkMode ? 'text-white' : 'text-black'}`}
+            >
+              AI-Assistant-Bodhi
+            </h1>
           </div>
           <div className="flex items-center space-x-4">
             <button onClick={toggleTheme} className={`${isDarkMode ? 'text-yellow-300' : 'text-gray-600'} hover:text-yellow-500`}>
               {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
             </button>
-            <button onClick={() => setActiveTab('settings')} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+            {/* <button onClick={() => setActiveTab('settings')} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
               <Settings size={24} />
-            </button>
+            </button> */}
             <button 
               onClick={() => setShowLogoutModal(true)} 
               disabled={isLoggingOut}

@@ -85,7 +85,7 @@ Include:
     },
     'Math Solver': {
         systemPrompt: `You are a mathematics expert. For each problem:
-1. Show step-by-step solutions
+1. Show step-by-step solutionsx
 2. Explain each step clearly
 3. Provide the final answer
 4. Include relevant formulas used

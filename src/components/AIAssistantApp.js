@@ -6,15 +6,17 @@ import Sidebar from './ai/Sidebar';
 import HomePage from './ai/HomePage';
 import AIAssistantChat from './ai/AIAssistantChat';
 import NotificationsTab from './ai/NotificationsTab';
-import ProfileTab from './ai/ProfileTab';
-import Dashboard from './Dashboard';
+import ProfilePage from './ai/ProfilePage';
+import DashboardPage from './ai/DashboardPage';
 import Chat from './ai/Chat';
+import SettingsPage from './ai/SettingsPage';
 import { promptTemplates } from '@/utils/promptTemplates';
 import { generateResponse } from '@/services/groqService';
 import BottomNav from './ai/BottomNav';
 import { ChevronRight, Send, Heart, MessageSquare, AlertTriangle, Camera, Settings, LogOut, Sun, Moon, Home, Bell, User, BarChart2, Bot, Menu, Search, Calendar, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import BackButtonHandler from './BackButtonHandler';
 
 const features = [
   { name: 'Chat Assistant', color: 'bg-blue-600', category: 'general' },
@@ -65,12 +67,26 @@ const notifications = [
 ];
 
 const chatHistory = [
-  { title: 'Wayanad landslide', date: '14/09/2024' },
-  { title: 'Tajmahal built details?', date: '14/09/2024' },
-  { title: 'Create a documentation about t...', date: '14/09/2024' },
-  { title: 'How to sleep in two minutes...', date: '14/09/2024' },
-  { title: 'Give me a good night message...', date: '14/09/2024' },
-  { title: 'Tell me a story', date: '14/09/2024' },
+  {
+    title: "Getting Started with Bodhi",
+    date: "2025-01-06",
+  },
+  {
+    title: "Code Review Discussion",
+    date: "2025-01-06",
+  },
+  {
+    title: "Story Writing Session",
+    date: "2025-01-05",
+  },
+  {
+    title: "Python Help",
+    date: "2025-01-05",
+  },
+  {
+    title: "Recipe Suggestions",
+    date: "2025-01-04",
+  }
 ];
 
 function getFeatureDescription(featureName) {
@@ -136,6 +152,28 @@ const AIAssistantApp = () => {
   const [aiAssistantDescription, setAiAssistantDescription] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [chatHistory, setChatHistory] = useState([
+    {
+      title: "Getting Started with Bodhi",
+      date: "2025-01-06",
+    },
+    {
+      title: "Code Review Discussion",
+      date: "2025-01-06",
+    },
+    {
+      title: "Story Writing Session",
+      date: "2025-01-05",
+    },
+    {
+      title: "Python Help",
+      date: "2025-01-05",
+    },
+    {
+      title: "Recipe Suggestions",
+      date: "2025-01-04",
+    }
+  ]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -325,7 +363,7 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
                 transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                 className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 shadow-lg flex items-center justify-center"
               >
-                <svg className="w-24 h-24 text-white" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-24 h-24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="50" cy="50" r="45" fill="currentColor" />
                   <path d="M30 70 Q50 30 70 70" stroke="white" strokeWidth="6" fill="none" />
                   <circle cx="40" cy="40" r="5" fill="white" />
@@ -397,6 +435,7 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveTab('chat')}
                 className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300"
               >
                 Try Bodhi Now
@@ -425,6 +464,10 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
             </motion.section>
           </div>
         );
+      case 'chat':
+        return <Chat />;
+      case 'settings':
+        return <SettingsPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />;
       case 'ai-assistant':
         return (
           <div className="flex flex-col h-[calc(100vh-8rem)]">
@@ -599,14 +642,12 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
             )}
           </div>
         );
-      case 'chat':
-        return <Chat />;
       case 'dashboard':
-        return <Dashboard isDarkMode={isDarkMode} />;
+        return <DashboardPage isDarkMode={isDarkMode} />;
       case 'notifications':
         return <NotificationsTab isDarkMode={isDarkMode} notifications={notifications} />;
       case 'profile':
-        return <ProfileTab isDarkMode={isDarkMode} />;
+        return <ProfilePage isDarkMode={isDarkMode} />;
       default:
         return (
           <div className={`p-6 pb-24 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
@@ -616,23 +657,32 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
     }
   };
 
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+  };
+
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900 text-white' : 'bg-gray-100'}`}>
       {/* Header */}
       <header className={`p-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex justify-between items-center`}>
-        <div className="flex items-center">
+        <div className={`flex items-center ${isDarkMode ? 'text-white' : 'text-black'}`}>
           <button onClick={toggleSidebar} className="mr-4">
             <Menu size={24} />
           </button>
-          <h1 className="text-2xl font-bold" onClick={handleLogoClick}>AI-Assistant-Bodhi</h1>
+          <h1
+              className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}
+              onClick={handleLogoClick}
+            >
+              AI-Assistant-Bodhi
+            </h1>
         </div>
         <div className="flex items-center space-x-4">
           <button onClick={toggleTheme} className={`${isDarkMode ? 'text-yellow-300' : 'text-gray-600'} hover:text-yellow-500`}>
             {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
           </button>
-          <button onClick={() => setActiveTab('settings')} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+          {/* <button onClick={() => setActiveTab('settings')} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
             <Settings size={24} />
-          </button>
+          </button> */}
           <button onClick={() => setShowLogoutModal(true)} className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
             <LogOut size={24} />
           </button>
@@ -695,6 +745,20 @@ Or simply ask for a recipe suggestion and I'll help you out!`,
 
       {/* Main Content */}
       <main className="flex-grow overflow-y-auto">
+        <BackButtonHandler activeTab={activeTab} setActiveTab={handleTabChange} />
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isDarkMode={isDarkMode}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          chatHistory={chatHistory}
+          sidebarRef={sidebarRef}
+        />
         {renderContent()}
       </main>
 
